@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../auth/data/repositories/auth_repository_impl.dart';
 import '../../auth/presentation/widgets/auth_section.dart';
-import '../../users/data/models/user.dart';
+import '../../users/data/models/user_model.dart';
+import '../../users/presentation/widgets/users_section.dart';
 import 'widgets/status_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,10 +17,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   String _statusMessage = 'Ready';
-  List<User> _users = [];
+  List<UserModel> _users = [];
 
   Future<void> _handleLoginSuccess() async {
-    _setLoading(true, 'Logging in...');
+    _setLoading(true, 'Logging in...', []);
 
     final result = await widget.authRepository.login(
       email: 'eve.holt@reqres.in',
@@ -28,10 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     result.fold(
       onSuccess: (response) {
-        _setLoading(false, '✅ Login successful! Token: ${response.token}');
+        _setLoading(false, '✅ Login successful! Token: ${response.token}', []);
       },
       onFailure: (failure) {
-        _setLoading(false, '❌ Login failed: ${failure.message}');
+        _setLoading(false, '❌ Login failed: ${failure.message}', []);
       },
     );
   }
@@ -91,10 +92,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _setLoading(bool loading, String message) {
+  Future<void> _handleFetchUsers() async {
+    _setLoading(true, 'Fetching users...', []);
+  }
+
+  void _setLoading(bool loading, String message, List<UserModel> users) {
     setState(() {
       _isLoading = loading;
       _statusMessage = message;
+      _users = users;
     });
   }
 
@@ -114,6 +120,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onLoginFailure: _handleLoginFailure,
               onLogout: _handleLogout,
             ),
+            const SizedBox(height: 16),
+            UsersSection(onFetchUsers: _handleFetchUsers, onFetchUser: () {}),
           ],
         ),
       ),
