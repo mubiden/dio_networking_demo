@@ -3,12 +3,19 @@ import 'package:flutter/material.dart';
 import '../../auth/data/repositories/auth_repository_impl.dart';
 import '../../auth/presentation/widgets/auth_section.dart';
 import '../../users/data/models/user_model.dart';
+import '../../users/data/repositories/users_repository_impl.dart';
 import '../../users/presentation/widgets/users_section.dart';
 import 'widgets/status_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final AuthRepositoryImpl authRepository;
-  const HomeScreen({super.key, required this.authRepository});
+  final UsersRepositoryImpl usersRepository;
+
+  const HomeScreen({
+    super.key,
+    required this.authRepository,
+    required this.usersRepository,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -17,10 +24,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   String _statusMessage = 'Ready';
-  List<UserModel> _users = [];
 
   Future<void> _handleLoginSuccess() async {
-    _setLoading(true, 'Logging in...', []);
+    _setLoading(true, 'Logging in...');
 
     final result = await widget.authRepository.login(
       email: 'eve.holt@reqres.in',
@@ -29,10 +35,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     result.fold(
       onSuccess: (response) {
-        _setLoading(false, '✅ Login successful! Token: ${response.token}', []);
+        _setLoading(false, '✅ Login successful! Token: ${response.token}');
       },
       onFailure: (failure) {
-        _setLoading(false, '❌ Login failed: ${failure.message}', []);
+        _setLoading(false, '❌ Login failed: ${failure.message}');
       },
     );
   }
@@ -50,17 +56,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     result.fold(
       onSuccess: (response) {
-        setState(() {
-          _isLoading = false;
-          _statusMessage = '✅ Unexpected success';
-        });
+        _setLoading(false, '✅ Unexpected success');
       },
       onFailure: (failure) {
-        setState(() {
-          _isLoading = false;
-          _statusMessage =
-              '❌ Expected failure: ${failure.message} (${failure.statusCode})';
-        });
+        _setLoading(
+          false,
+          '❌ Expected failure: ${failure.message} (${failure.statusCode})',
+        );
       },
     );
   }
@@ -79,10 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
           TextButton(
             onPressed: () {
               widget.authRepository.logout();
-              setState(() {
-                _users = [];
-                _statusMessage = '🔒 Logged out. Token cleared.';
-              });
+              _setLoading(false, '🔒 Logged out. Token cleared.');
               Navigator.pop(context);
             },
             child: Text('Logout'),
@@ -93,14 +92,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleFetchUsers() async {
-    _setLoading(true, 'Fetching users...', []);
+    _setLoading(true, 'Fetching users...');
+    final result = await widget.usersRepository.fetchUsers();
+    final users = (result as List)
+        .map((json) => UserModel.fromJson(json))
+        .toList();
+
+    result.fold(
+      onSuccess: (response) {
+        _setLoading(
+          false,
+          '✅ Fetched ${users.length} users (Page ${response.page}/${response.totalPages})',
+        );
+      },
+      onFailure: (failure) {
+        _setLoading(
+          false,
+          '❌ Fetch failed: ${failure.message} (${failure.statusCode ?? 'N/A'})',
+        );
+      },
+    );
   }
 
-  void _setLoading(bool loading, String message, List<UserModel> users) {
+  void _setLoading(bool loading, String message) {
     setState(() {
       _isLoading = loading;
       _statusMessage = message;
-      _users = users;
     });
   }
 

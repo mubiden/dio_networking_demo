@@ -1,25 +1,20 @@
 import 'package:dio/dio.dart';
 
 import '../../../../core/error/error_mapper.dart';
-import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/result.dart';
+import '../datasources/users_remote_datasource.dart';
 import '../models/user_model.dart';
 import '../models/users_response_model.dart';
 
-class UsersRepository {
-  final DioClient dioClient;
+class UsersRepositoryImpl {
+  final UsersRemoteDatasource remoteDatasource;
 
-  UsersRepository({required this.dioClient});
+  UsersRepositoryImpl({required this.remoteDatasource});
 
   Future<Result<UsersResponseModel>> fetchUsers({int page = 1}) async {
     try {
-      final response = await dioClient.dio.get(
-        '/users',
-        queryParameters: {'page': page},
-      );
-
-      final usersResponse = UsersResponseModel.fromJson(response.data);
-      return Result.success(usersResponse);
+      final response = await remoteDatasource.fetchUsers(page: page);
+      return Result.success(response);
     } on DioException catch (e) {
       return Result.failure(mapDioError(e));
     }
@@ -27,8 +22,7 @@ class UsersRepository {
 
   Future<Result<UserModel>> fetchUser(int id) async {
     try {
-      final response = await dioClient.dio.get('/users/$id');
-      final user = UserModel.fromJson(response.data['data']);
+      final user = await remoteDatasource.fetchUser(id);
       return Result.success(user);
     } on DioException catch (e) {
       return Result.failure(mapDioError(e));

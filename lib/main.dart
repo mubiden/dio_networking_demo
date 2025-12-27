@@ -5,6 +5,8 @@ import 'core/storage/auth_token_manager.dart';
 import 'features/auth/data/datasources/auth_remote_datasource_impl.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/home/presentation/home_screen.dart';
+import 'features/users/data/datasources/users_remote_datasource_impl.dart';
+import 'features/users/data/repositories/users_repository_impl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,11 +30,20 @@ class MyApp extends StatelessWidget {
       tokenManager: tokenManager,
     );
 
+    final usersRemoteDataSource = UsersRemoteDatasourceImpl(dio: dioClient.dio);
+
+    final usersRepository = UsersRepositoryImpl(
+      remoteDatasource: usersRemoteDataSource,
+    );
+
     return MaterialApp(
       title: 'UpScrolled',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-      home: HomeScreen(authRepository: authRepository),
+      home: HomeScreen(
+        authRepository: authRepository,
+        usersRepository: usersRepository,
+      ),
     );
   }
 }
